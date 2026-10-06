@@ -508,6 +508,22 @@ body {
     border-color: var(--accent-primary);
 }
 
+.btn-outline-success {
+    border: 1px solid var(--accent-success, #10b981);
+    color: var(--accent-success, #10b981);
+    background: transparent;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: var(--transition-fast);
+}
+
+.btn-outline-success:hover {
+    background: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+    border-color: #34d399;
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.25);
+}
+
 /* =========================
    Summary Cards
    ========================= */

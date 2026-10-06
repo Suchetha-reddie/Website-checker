@@ -23,6 +23,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const resultsSection = document.getElementById('resultsSection');
     const resultsTarget = document.getElementById('resultsTarget');
     const newScanBtn = document.getElementById('newScanBtn');
+    const exportExcelBtn = document.getElementById('exportExcelBtn');
+
+    // Currently active scan data in the session
+    let currentScanData = null;
 
     // =========================================================
     // Loading Step Definitions
@@ -49,6 +53,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (newScanBtn) {
         newScanBtn.addEventListener('click', resetToHomepage);
+    }
+
+    if (exportExcelBtn) {
+        exportExcelBtn.addEventListener('click', handleExcelDownload);
     }
 
     // Clear error when user types
@@ -209,6 +217,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // =========================================================
 
     function displayResults(data) {
+        // Save current scan data for Excel export
+        currentScanData = data;
+
         loadingSection.style.display = 'none';
         if (heroSection) heroSection.style.display = 'none';
         if (featuresSection) featuresSection.style.display = 'none';
@@ -216,7 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Set target
         resultsTarget.textContent = data.target || data.hostname;
 
-        // Populate summary cards with available data (Phase 1: mostly placeholders)
+        // Populate summary cards with available data
         populateSummaryCards(data);
 
         // Populate overview tab
@@ -228,6 +239,46 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Scroll to results
         window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    async function handleExcelDownload() {
+        if (!currentScanData) return;
+
+        if (!exportExcelBtn) return;
+        exportExcelBtn.disabled = true;
+        const originalHtml = exportExcelBtn.innerHTML;
+        exportExcelBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> Exporting...';
+
+        try {
+            const response = await fetch('/api/export/excel', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(currentScanData),
+            });
+
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.error || 'Failed to download report');
+            }
+
+            const blob = await response.blob();
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            const hostname = currentScanData.hostname || 'website';
+            const dateStr = new Date().toISOString().slice(0, 10);
+            a.download = `security_report_${hostname}_${dateStr}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(downloadUrl);
+        } catch (error) {
+            console.error('Download error:', error);
+            alert('Failed to generate Excel report: ' + error.message);
+        } finally {
+            exportExcelBtn.disabled = false;
+            exportExcelBtn.innerHTML = originalHtml;
+        }
     }
 
     function populateSummaryCards(data) {

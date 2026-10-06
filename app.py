@@ -13,7 +13,7 @@ import os
 import uuid
 from datetime import datetime, timezone
 
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, render_template, request, send_file
 
 import config
 from modules.url_validator import validate_url, check_resolved_ip
@@ -25,6 +25,10 @@ from modules.http_checker import check_http
 from modules.headers_checker import check_security_headers
 from modules.tech_detector import detect_technologies
 from modules.security_scorer import calculate_security_score
+from modules.excel_exporter import generate_excel_report
+
+# In-memory cache for recent scan results (keyed by scan_id)
+RECENT_SCANS = {}
 
 # =============================================================================
 # Logging Setup
@@ -187,9 +191,67 @@ def api_scan():
         "recommendations": recommendations,
     }
 
+    # Cache scan in memory for direct exports
+    RECENT_SCANS[scan_id] = scan_result
+    if len(RECENT_SCANS) > 100:
+        RECENT_SCANS.pop(next(iter(RECENT_SCANS)))
+
     logger.info("Scan completed [%s] for %s — Score: %s/100", scan_id, target_url, security_score.get("total"))
 
     return jsonify(scan_result), 200
+
+
+@app.route("/api/export/excel", methods=["POST"])
+def export_excel():
+    """
+    Generate and download an Excel spreadsheet report for the provided scan results.
+    Accepts JSON body with scan results.
+    """
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({"success": False, "error": "No scan data provided."}), 400
+
+    hostname = data.get("hostname") or "website"
+    date_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"security_report_{hostname}_{date_str}.xlsx"
+
+    try:
+        excel_buffer = generate_excel_report(data)
+        return send_file(
+            excel_buffer,
+            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            as_attachment=True,
+            download_name=filename,
+        )
+    except Exception as e:
+        logger.error("Failed to generate Excel report: %s", e)
+        return jsonify({"success": False, "error": f"Failed to generate Excel report: {str(e)}"}), 500
+
+
+@app.route("/api/report/<scan_id>/excel", methods=["GET"])
+def report_excel(scan_id):
+    """
+    Download an Excel report for a previously executed scan by scan_id.
+    """
+    scan_data = RECENT_SCANS.get(scan_id)
+    if not scan_data:
+        return jsonify({"success": False, "error": f"Scan with ID '{scan_id}' not found in recent scans."}), 404
+
+    hostname = scan_data.get("hostname") or "website"
+    date_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"security_report_{hostname}_{date_str}.xlsx"
+
+    try:
+        excel_buffer = generate_excel_report(scan_data)
+        return send_file(
+            excel_buffer,
+            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            as_attachment=True,
+            download_name=filename,
+        )
+    except Exception as e:
+        logger.error("Failed to generate Excel report for %s: %s", scan_id, e)
+        return jsonify({"success": False, "error": f"Failed to generate Excel report: {str(e)}"}), 500
 
 
 @app.route("/api/health", methods=["GET"])
