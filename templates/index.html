@@ -1,0 +1,332 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="container">
+        <div class="hero-content text-center">
+            <!-- Animated Shield Icon -->
+            <div class="hero-icon-wrapper">
+                <div class="hero-icon-glow"></div>
+                <i class="bi bi-shield-check hero-icon"></i>
+            </div>
+
+            <h1 class="hero-title">
+                Website Information &<br>
+                <span class="gradient-text">Security Checker</span>
+            </h1>
+            <p class="hero-subtitle">
+                Analyze publicly available website information and security configuration.
+            </p>
+
+            <!-- URL Input Form -->
+            <div class="scan-form-wrapper">
+                <form id="scanForm" class="scan-form" autocomplete="off">
+                    <div class="input-group-custom">
+                        <div class="input-icon">
+                            <i class="bi bi-globe2"></i>
+                        </div>
+                        <input
+                            type="text"
+                            id="urlInput"
+                            class="form-control scan-input"
+                            placeholder="https://example.com"
+                            aria-label="Enter Website URL"
+                            required
+                        >
+                        <button type="submit" id="scanBtn" class="btn btn-scan">
+                            <i class="bi bi-search me-2"></i>
+                            <span>CHECK WEBSITE</span>
+                        </button>
+                    </div>
+                    <div id="urlError" class="error-message" style="display: none;">
+                        <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                        <span id="urlErrorText"></span>
+                    </div>
+                </form>
+                <p class="scan-disclaimer">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Only scan websites you own or have permission to analyze.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Background decorations -->
+    <div class="hero-bg-grid"></div>
+    <div class="hero-bg-orb hero-bg-orb-1"></div>
+    <div class="hero-bg-orb hero-bg-orb-2"></div>
+</section>
+
+<!-- Loading Section (hidden initially) -->
+<section id="loadingSection" class="loading-section" style="display: none;">
+    <div class="container">
+        <div class="loading-card">
+            <div class="loading-header">
+                <div class="loading-spinner"></div>
+                <h2 class="loading-title">Analyzing Website...</h2>
+                <p class="loading-target" id="loadingTarget"></p>
+            </div>
+            <div class="loading-steps" id="loadingSteps">
+                <div class="loading-step" data-step="validate">
+                    <span class="step-icon"><i class="bi bi-hourglass-split"></i></span>
+                    <span class="step-text">Validating URL</span>
+                </div>
+                <div class="loading-step" data-step="availability">
+                    <span class="step-icon"><i class="bi bi-hourglass-split"></i></span>
+                    <span class="step-text">Checking availability</span>
+                </div>
+                <div class="loading-step" data-step="ip">
+                    <span class="step-icon"><i class="bi bi-hourglass-split"></i></span>
+                    <span class="step-text">Resolving IP address</span>
+                </div>
+                <div class="loading-step" data-step="dns">
+                    <span class="step-icon"><i class="bi bi-hourglass-split"></i></span>
+                    <span class="step-text">Checking DNS records</span>
+                </div>
+                <div class="loading-step" data-step="http">
+                    <span class="step-icon"><i class="bi bi-hourglass-split"></i></span>
+                    <span class="step-text">Analyzing HTTP/HTTPS</span>
+                </div>
+                <div class="loading-step" data-step="ssl">
+                    <span class="step-icon"><i class="bi bi-hourglass-split"></i></span>
+                    <span class="step-text">Checking SSL/TLS</span>
+                </div>
+                <div class="loading-step" data-step="headers">
+                    <span class="step-icon"><i class="bi bi-hourglass-split"></i></span>
+                    <span class="step-text">Checking security headers</span>
+                </div>
+                <div class="loading-step" data-step="technology">
+                    <span class="step-icon"><i class="bi bi-hourglass-split"></i></span>
+                    <span class="step-text">Detecting technologies</span>
+                </div>
+                <div class="loading-step" data-step="report">
+                    <span class="step-icon"><i class="bi bi-hourglass-split"></i></span>
+                    <span class="step-text">Generating report</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Results Section (hidden initially) -->
+<section id="resultsSection" class="results-section" style="display: none;">
+    <div class="container">
+        <!-- Results Header -->
+        <div class="results-header">
+            <div class="results-header-info">
+                <h2 class="results-title">
+                    <i class="bi bi-clipboard-data me-2"></i>Scan Results
+                </h2>
+                <p class="results-target" id="resultsTarget"></p>
+            </div>
+            <div class="results-header-actions">
+                <button class="btn btn-outline-accent btn-sm" id="newScanBtn">
+                    <i class="bi bi-arrow-repeat me-1"></i> New Scan
+                </button>
+            </div>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="summary-cards" id="summaryCards">
+            <div class="summary-card" id="cardStatus">
+                <div class="card-icon"><i class="bi bi-activity"></i></div>
+                <div class="card-label">Website Status</div>
+                <div class="card-value" id="valStatus">—</div>
+            </div>
+            <div class="summary-card" id="cardIP">
+                <div class="card-icon"><i class="bi bi-hdd-network"></i></div>
+                <div class="card-label">IP Address</div>
+                <div class="card-value card-value-sm" id="valIP">—</div>
+            </div>
+            <div class="summary-card" id="cardHTTPS">
+                <div class="card-icon"><i class="bi bi-lock"></i></div>
+                <div class="card-label">HTTPS</div>
+                <div class="card-value" id="valHTTPS">—</div>
+            </div>
+            <div class="summary-card" id="cardSSL">
+                <div class="card-icon"><i class="bi bi-shield-check"></i></div>
+                <div class="card-label">SSL/TLS</div>
+                <div class="card-value" id="valSSL">—</div>
+            </div>
+            <div class="summary-card" id="cardHeaders">
+                <div class="card-icon"><i class="bi bi-list-check"></i></div>
+                <div class="card-label">Security Headers</div>
+                <div class="card-value" id="valHeaders">—</div>
+            </div>
+            <div class="summary-card" id="cardResponseTime">
+                <div class="card-icon"><i class="bi bi-speedometer2"></i></div>
+                <div class="card-label">Response Time</div>
+                <div class="card-value" id="valResponseTime">—</div>
+            </div>
+            <div class="summary-card summary-card-score" id="cardScore">
+                <div class="card-icon"><i class="bi bi-trophy"></i></div>
+                <div class="card-label">Security Score</div>
+                <div class="card-value card-value-lg" id="valScore">—</div>
+                <div class="card-sublabel">/ 100</div>
+            </div>
+        </div>
+
+        <!-- Detailed Results Tabs -->
+        <div class="detail-section">
+            <ul class="nav nav-tabs detail-tabs" id="resultTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="tab-overview" data-bs-toggle="tab" data-bs-target="#panel-overview" type="button" role="tab">
+                        <i class="bi bi-grid me-1"></i>Overview
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="tab-network" data-bs-toggle="tab" data-bs-target="#panel-network" type="button" role="tab">
+                        <i class="bi bi-diagram-3 me-1"></i>Network
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="tab-dns" data-bs-toggle="tab" data-bs-target="#panel-dns" type="button" role="tab">
+                        <i class="bi bi-server me-1"></i>DNS
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="tab-http" data-bs-toggle="tab" data-bs-target="#panel-http" type="button" role="tab">
+                        <i class="bi bi-arrow-left-right me-1"></i>HTTP/HTTPS
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="tab-ssl" data-bs-toggle="tab" data-bs-target="#panel-ssl" type="button" role="tab">
+                        <i class="bi bi-lock me-1"></i>SSL/TLS
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="tab-headers" data-bs-toggle="tab" data-bs-target="#panel-headers" type="button" role="tab">
+                        <i class="bi bi-shield me-1"></i>Headers
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="tab-tech" data-bs-toggle="tab" data-bs-target="#panel-tech" type="button" role="tab">
+                        <i class="bi bi-cpu me-1"></i>Technology
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="tab-analysis" data-bs-toggle="tab" data-bs-target="#panel-analysis" type="button" role="tab">
+                        <i class="bi bi-graph-up me-1"></i>Analysis
+                    </button>
+                </li>
+            </ul>
+            <div class="tab-content detail-panels" id="resultTabContent">
+                <!-- Overview Tab -->
+                <div class="tab-pane fade show active" id="panel-overview" role="tabpanel">
+                    <div class="detail-panel">
+                        <h3 class="panel-title"><i class="bi bi-grid me-2"></i>Scan Overview</h3>
+                        <div id="overviewContent">
+                            <p class="text-muted">Scan data will appear here once modules are implemented.</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Network Tab -->
+                <div class="tab-pane fade" id="panel-network" role="tabpanel">
+                    <div class="detail-panel">
+                        <h3 class="panel-title"><i class="bi bi-diagram-3 me-2"></i>Network Information</h3>
+                        <div id="networkContent">
+                            <p class="text-muted">Network information will appear here.</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- DNS Tab -->
+                <div class="tab-pane fade" id="panel-dns" role="tabpanel">
+                    <div class="detail-panel">
+                        <h3 class="panel-title"><i class="bi bi-server me-2"></i>DNS Records</h3>
+                        <div id="dnsContent">
+                            <p class="text-muted">DNS records will appear here.</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- HTTP/HTTPS Tab -->
+                <div class="tab-pane fade" id="panel-http" role="tabpanel">
+                    <div class="detail-panel">
+                        <h3 class="panel-title"><i class="bi bi-arrow-left-right me-2"></i>HTTP / HTTPS Analysis</h3>
+                        <div id="httpContent">
+                            <p class="text-muted">HTTP/HTTPS analysis will appear here.</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- SSL/TLS Tab -->
+                <div class="tab-pane fade" id="panel-ssl" role="tabpanel">
+                    <div class="detail-panel">
+                        <h3 class="panel-title"><i class="bi bi-lock me-2"></i>SSL/TLS Certificate</h3>
+                        <div id="sslContent">
+                            <p class="text-muted">SSL/TLS information will appear here.</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Security Headers Tab -->
+                <div class="tab-pane fade" id="panel-headers" role="tabpanel">
+                    <div class="detail-panel">
+                        <h3 class="panel-title"><i class="bi bi-shield me-2"></i>Security Headers</h3>
+                        <div id="headersContent">
+                            <p class="text-muted">Security headers analysis will appear here.</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Technology Tab -->
+                <div class="tab-pane fade" id="panel-tech" role="tabpanel">
+                    <div class="detail-panel">
+                        <h3 class="panel-title"><i class="bi bi-cpu me-2"></i>Technology Indicators</h3>
+                        <div id="techContent">
+                            <p class="text-muted">Technology detection results will appear here.</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Analysis Tab -->
+                <div class="tab-pane fade" id="panel-analysis" role="tabpanel">
+                    <div class="detail-panel">
+                        <h3 class="panel-title"><i class="bi bi-graph-up me-2"></i>Security Analysis</h3>
+                        <div id="analysisContent">
+                            <p class="text-muted">Security analysis and recommendations will appear here.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="features-section">
+    <div class="container">
+        <h2 class="section-title text-center">
+            <span class="gradient-text">What We Analyze</span>
+        </h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon"><i class="bi bi-hdd-network"></i></div>
+                <h3>Network & DNS</h3>
+                <p>IP resolution, DNS records (A, AAAA, MX, NS, CNAME, TXT, SOA), and availability checks.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="bi bi-lock-fill"></i></div>
+                <h3>SSL/TLS</h3>
+                <p>Certificate validity, issuer, expiry dates, TLS version, and hostname verification.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="bi bi-shield-fill-check"></i></div>
+                <h3>Security Headers</h3>
+                <p>CSP, HSTS, X-Content-Type-Options, X-Frame-Options, Referrer-Policy, and more.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="bi bi-arrow-repeat"></i></div>
+                <h3>Redirects</h3>
+                <p>Full redirect chain tracking, HTTP→HTTPS enforcement, and loop detection.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="bi bi-cpu-fill"></i></div>
+                <h3>Technology</h3>
+                <p>Passive detection of web servers, CMS platforms, frameworks, and libraries.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="bi bi-file-earmark-text"></i></div>
+                <h3>Reports</h3>
+                <p>Comprehensive security reports with scoring, recommendations, and export options.</p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

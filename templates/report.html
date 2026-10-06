@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="results-section" style="padding-top: 3rem;">
+    <div class="container">
+        <div class="results-header">
+            <div class="results-header-info">
+                <h2 class="results-title">
+                    <i class="bi bi-file-earmark-text me-2"></i>Security Report
+                </h2>
+                <p class="results-target">Report ID: {{ scan_id }}</p>
+            </div>
+            <div class="results-header-actions">
+                <a href="/" class="btn btn-outline-accent btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i> Back to Scanner
+                </a>
+            </div>
+        </div>
+        <div class="detail-section">
+            <div class="detail-panel">
+                <p class="text-muted">Full report view will be implemented in Phase 7.</p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
