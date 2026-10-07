@@ -59,40 +59,134 @@ Our application is purely **passive and non-destructive**. It only reads public 
 
 ## 3. The Complete Life Cycle of a Scan
 
-Here is the exact journey of a request from the second you click the **"CHECK WEBSITE"** button:
+Instead of a confusing maze of technical interactions, think of a scan as an **ordered 10-step inspection assembly line**. 
+
+Here is the high-level roadmap of what happens every time you scan a website:
 
 ```mermaid
-sequenceDiagram
-    autonumber
-    actor User as 👤 User Browser
-    participant JS as ⚡ script.js (Frontend)
-    participant Flask as 🐍 app.py (Flask API)
-    participant Modules as 🔍 Scan Modules
-    participant Target as 🌐 Target Website
+flowchart TD
+    S1["🟢 Step 1: You Click 'CHECK WEBSITE'<br/>Browser sanitizes input & shows loading animation"] --> S2["🛡️ Step 2: Safety & SSRF Gatekeeper<br/>Blocks illegal internal IP addresses"]
+    S2 --> S3["⏱️ Step 3: Doorbell Ping<br/>Tests HTTP reachability & measures latency"]
+    S3 --> S4["📍 Step 4: Address Lookup<br/>Resolves IPv4 and IPv6 coordinates"]
+    S4 --> S5["📖 Step 5: Reading the Domain Phonebook<br/>Queries DNS records (A, MX, NS, TXT)"]
+    S5 --> S6["🔐 Step 6: Certificate & Identity Check<br/>Inspects SSL/TLS padlock and expiration"]
+    S6 --> S7["🛡️ Step 7: Defense Shields Inspection<br/>Analyzes Security Headers & Cookies"]
+    S7 --> S8["🔍 Step 8: Technology Fingerprinting<br/>Identifies CMS, Web Server & Frameworks"]
+    S8 --> S9["📊 Step 9: The Security Report Card<br/>Calculates 0-100 Score and Letter Grade"]
+    S9 --> S10["📑 Step 10: Interactive UI & Excel Download<br/>Renders tabs & generates downloadable .xlsx"]
 
-    User->>JS: Enters URL & clicks "CHECK WEBSITE"
-    JS->>JS: Validates format & displays animated loading steps
-    JS->>Flask: POST /api/scan { url: "https://example.com" }
-    
-    rect rgb(30, 41, 59)
-    note over Flask,Modules: Backend Security Inspection Pipeline
-    Flask->>Modules: Step 1 & 2: Validate URL syntax & check SSRF safety
-    Flask->>Target: Step 3: Check HTTP Reachability & measure latency
-    Flask->>Target: Step 4: Resolve IPv4 and IPv6 addresses via DNS
-    Flask->>Target: Step 5: Query DNS records (A, AAAA, MX, NS, TXT, SOA)
-    Flask->>Target: Step 6: Test HTTPS availability, redirects & cookies
-    Flask->>Target: Step 7: Open TLS socket handshake & verify certificate
-    Flask->>Target: Step 8: Inspect Security Headers & information leaks
-    Flask->>Target: Step 9: Detect CMS, web servers, and JS libraries
-    Flask->>Modules: Step 10: Calculate 100-point security score & grade
-    end
-    
-    Flask-->>JS: Returns complete JSON results
-    JS->>User: Renders 7 summary cards & 8 interactive detail tabs
-    User->>JS: Clicks "Download Excel"
-    JS->>Flask: POST /api/export/excel (with scan data)
-    Flask-->>User: Downloads styled .xlsx multi-sheet workbook
+    style S1 fill:#1e293b,stroke:#38bdf8,stroke-width:2px,color:#f8fafc
+    style S2 fill:#1e293b,stroke:#f59e0b,stroke-width:2px,color:#f8fafc
+    style S3 fill:#1e293b,stroke:#10b981,stroke-width:2px,color:#f8fafc
+    style S4 fill:#1e293b,stroke:#6366f1,stroke-width:2px,color:#f8fafc
+    style S5 fill:#1e293b,stroke:#8b5cf6,stroke-width:2px,color:#f8fafc
+    style S6 fill:#1e293b,stroke:#ec4899,stroke-width:2px,color:#f8fafc
+    style S7 fill:#1e293b,stroke:#ef4444,stroke-width:2px,color:#f8fafc
+    style S8 fill:#1e293b,stroke:#14b8a6,stroke-width:2px,color:#f8fafc
+    style S9 fill:#1e293b,stroke:#f97316,stroke-width:2px,color:#f8fafc
+    style S10 fill:#1e293b,stroke:#22c55e,stroke-width:2px,color:#f8fafc
 ```
+
+---
+
+### Step-by-Step Breakdown
+
+Let's walk through each step in plain English so you know exactly what the code is doing at every moment:
+
+#### 🟢 Step 1: You Enter a Website & Click "Check Website"
+* **What happens:** You type a website address (like `github.com` or `https://google.com`) into the input box on the webpage and click the scan button.
+* **Behind the scenes:** The frontend script ([`static/js/script.js`](file:///Users/lakkakulasaiakash/Documents/website_checker/static/js/script.js)) trims unnecessary spaces, reveals an animated 8-step progress bar to give instant feedback, and sends an asynchronous request (`POST /api/scan`) to our Python Flask backend.
+* **💡 Real-Life Analogy:** Handing your car keys to the inspection mechanic at the customer service desk.
+
+---
+
+#### 🛡️ Step 2: The Bouncer Check (SSRF & Safety Guard)
+* **What happens:** Before Python touches the internet, it inspects the URL to ensure it is safe to scan.
+* **Behind the scenes:** [`modules/url_validator.py`](file:///Users/lakkakulasaiakash/Documents/website_checker/modules/url_validator.py) checks if the URL format is valid and verifies that it is not a dangerous **SSRF (Server-Side Request Forgery)** attempt. If someone tries to scan `localhost`, `127.0.0.1`, `192.168.1.1`, or AWS cloud metadata endpoints, the bouncer immediately blocks the scan with an error.
+* **💡 Real-Life Analogy:** A security guard at a building lobby checking IDs to make sure visitors aren't sneaking into the private employee-only bank vault.
+
+---
+
+#### ⏱️ Step 3: Knocking on the Front Door (Reachability & Speed)
+* **What happens:** The scanner tests if the website is actually awake and responsive right now.
+* **Behind the scenes:** [`modules/availability_checker.py`](file:///Users/lakkakulasaiakash/Documents/website_checker/modules/availability_checker.py) starts a microsecond stopwatch and sends a lightweight HTTP ping. It checks if the server replies with a healthy status code (like `200 OK`) and records how many milliseconds it took to respond (latency).
+* **💡 Real-Life Analogy:** Ringing the doorbell and timing with a stopwatch how many seconds it takes for someone to answer.
+
+---
+
+#### 📍 Step 4: Finding the Street Addresses (IPv4 & IPv6 Resolution)
+* **What happens:** The scanner discovers the exact numbered addresses where the website lives on the global internet.
+* **Behind the scenes:** [`modules/ip_resolver.py`](file:///Users/lakkakulasaiakash/Documents/website_checker/modules/ip_resolver.py) uses Python's `socket` library to look up the domain's **IPv4 address** (e.g., `140.82.121.4`) and modern **IPv6 address** (e.g., `2606:4700::6810`). It also checks for reverse DNS pointer (PTR) hostnames.
+* **💡 Real-Life Analogy:** Looking up the exact GPS latitude and longitude coordinates for a store name on Google Maps.
+
+---
+
+#### 📖 Step 5: Reading the Global Phonebook (DNS Records)
+* **What happens:** The scanner inspects the public registration directory of the domain.
+* **Behind the scenes:** [`modules/dns_checker.py`](file:///Users/lakkakulasaiakash/Documents/website_checker/modules/dns_checker.py) queries DNS servers for critical records:
+  - `A` / `AAAA`: Primary website server IP addresses.
+  - `MX`: Which mail servers handle email for this domain (e.g., Google Workspace, Outlook).
+  - `NS`: Who hosts the domain's authoritative name servers (e.g., Cloudflare, AWS Route 53).
+  - `TXT`: Security authorization records, including SPF (anti-spam email authentication) and domain ownership verification.
+* **💡 Real-Life Analogy:** Reading a company's listing in the public commercial register to see where they receive mail and who their registered agents are.
+
+---
+
+#### 🔐 Step 6: Checking the Digital Passport & Padlock (SSL/TLS Certificate)
+* **What happens:** The scanner verifies if data sent to this website is encrypted and secure from eavesdroppers.
+* **Behind the scenes:** [`modules/ssl_checker.py`](file:///Users/lakkakulasaiakash/Documents/website_checker/modules/ssl_checker.py) initiates an encrypted TLS handshake on port 443 using trusted root certificates (`certifi`). It inspects:
+  - Who issued the certificate (e.g., Let's Encrypt, DigiCert).
+  - When does it expire and how many days of validity remain?
+  - Does the Common Name and Subject Alternative Names (SANs) match the scanned website?
+  - What encryption protocol version is in use (e.g., modern TLS 1.3 vs outdated, insecure TLS 1.0)?
+* **💡 Real-Life Analogy:** An airport customs officer checking the holographic security seal, issuing country, and expiration date on a traveller's passport.
+
+---
+
+#### 🛡️ Step 7: Testing the Armor (Security Headers & Cookies)
+* **What happens:** The scanner inspects the invisible security guardrails that protect visitors from hackers and malware.
+* **Behind the scenes:** [`modules/headers_checker.py`](file:///Users/lakkakulasaiakash/Documents/website_checker/modules/headers_checker.py) and [`modules/http_checker.py`](file:///Users/lakkakulasaiakash/Documents/website_checker/modules/http_checker.py) analyze the HTTP response headers sent back by the server. They look for 7 essential shields:
+  1. `Content-Security-Policy` (stops malicious scripts / XSS).
+  2. `Strict-Transport-Security` (forces all connections to stay on encrypted HTTPS).
+  3. `X-Frame-Options` (stops invisible overlay clickjacking attacks).
+  4. `X-Content-Type-Options` (stops MIME sniffing tricks).
+  5. `Referrer-Policy` (protects visitor privacy).
+  6. `Permissions-Policy` (restricts access to camera, microphone, and geolocation).
+  7. Cookie Flags (`Secure`, `HttpOnly`, `SameSite`) to keep login sessions safe.
+* **💡 Real-Life Analogy:** A building safety inspector checking if fire extinguishers, emergency exit signs, and security cameras are installed properly.
+
+---
+
+#### 🔍 Step 8: Identifying Building Materials (Technology Fingerprinting)
+* **What happens:** The scanner figures out what tools, programming languages, and frameworks were used to build the website.
+* **Behind the scenes:** [`modules/tech_detector.py`](file:///Users/lakkakulasaiakash/Documents/website_checker/modules/tech_detector.py) inspects the public HTML markup, scripts, and server headers without breaking into anything. It identifies:
+  - Web servers & CDNs (Cloudflare, NGINX, Apache, CloudFront).
+  - Content Management Systems (WordPress, Shopify, Drupal).
+  - Frontend frameworks (React, Vue, Angular, Bootstrap).
+* **💡 Real-Life Analogy:** An architect glancing at a house from the sidewalk and noticing it has brick walls, double-glazed windows, and a solar roof.
+
+---
+
+#### 📊 Step 9: The Security Report Card (Scoring & Grading)
+* **What happens:** All the findings from Steps 2 through 8 are combined into a final mathematical score from 0 to 100 with an overall Letter Grade.
+* **Behind the scenes:** [`modules/security_scorer.py`](file:///Users/lakkakulasaiakash/Documents/website_checker/modules/security_scorer.py) weighs each security factor according to industry best practices:
+  - **SSL/TLS Security:** 30 points (Encryption, validity, modern TLS versions).
+  - **Security Headers:** 25 points (Presence and strength of protection headers).
+  - **DNS & Best Practices:** 20 points (Proper nameservers, SPF records, IPv6 readiness).
+  - **Cookie Security:** 15 points (`Secure`, `HttpOnly`, and `SameSite` flags).
+  - **Information Disclosure:** 10 points (Rewarding servers that hide sensitive version numbers).
+  - Total: **100 Points** & Grade (`A+`, `A`, `B`, `C`, `D`, `F`) with actionable fix recommendations.
+* **💡 Real-Life Analogy:** A teacher calculating grades on a final exam and stamping an official letter grade on your report card.
+
+---
+
+#### 📑 Step 10: Interactive Dashboard & Excel Audit Download
+* **What happens:** You receive a rich, interactive report on your screen and can download an Excel file with one click.
+* **Behind the scenes:** 
+  1. The Flask server packages all results into a single clean JSON object.
+  2. The browser renders 7 summary metrics cards and 8 detailed interactive tabs with live search and filtering.
+  3. Clicking **"Download Excel Report"** calls [`modules/excel_exporter.py`](file:///Users/lakkakulasaiakash/Documents/website_checker/modules/excel_exporter.py), which uses `openpyxl` to build an Excel workbook (`.xlsx`) featuring an Executive Summary sheet, 7 individual category tabs, color-coded status badges, and auto-adjusted columns.
+* **💡 Real-Life Analogy:** The mechanic handing you a laminated diagnostic folder with graphs, test results, and a checklist of suggested improvements to take home.
 
 ---
 
